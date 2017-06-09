@@ -3,7 +3,7 @@
 
 __ScriptVersion="1.0.0"
 __ScriptName=$(basename "$0")
-
+__ScriptRoot=$(dirname "$0")
 
 #===  FUNCTION  ================================================================
 #         NAME:  usage
@@ -80,7 +80,7 @@ fi
 
 # do action
 stime=$SECONDS
-find "$file" -type f | parallel --no-notice -j $jobs -P $works encrypt $action
+find "$file" -type f | parallel --no-notice -j $jobs -P $works $__ScriptRoot/encrypt.php $action
 etime=$SECONDS
 printf "release time: %.2f\n" $(($etime - $stime))
 
