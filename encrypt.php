@@ -224,11 +224,10 @@ class FileSafe
 //custom function
 function getPathFromConsole($arr)
 {
-    $len = count($arr);
-    if(substr($arr[$len-1], 0, 1) !== '-') return $arr[$len-1];
+    array_shift($arr);
     foreach ($arr as $key=>$val)
     {
-        if (substr($val, 0, 1) !== '-' && $key > 0) return $val;
+        if ($val[0] !== '-') return $val;
     }
 }
 
@@ -237,7 +236,7 @@ if($argc==1 || in_array('-h', $argv)) {
     $help = <<<EOF
 Desc：This is a video encrypt program
 Usage：
-    videocode [option] [dir]
+    videocode [option] [dir/filename]
     
     option:
         -e encrypt file [default]
@@ -260,28 +259,19 @@ EOF;
 ini_set("memory_limit", "512M");
 set_time_limit(0);
 
-$dir = '';
+$uri = '';
 $bEncrypt = true;
 $bFileEncrypt = true;
 
 if(in_array('-d', $argv)) $bEncrypt = false;
 if(in_array('-n', $argv)) $bFileEncrypt = false;
 
-$dir = getPathFromConsole($argv);
-$dir = rtrim($dir, '/');
+$uri = getPathFromConsole($argv);
+$uri = rtrim($uri, '/');
 
-if(!is_dir($dir)) {
-    echo 'Please check the dir param', "\n\n"; 
-    exit();
-}
-
-FileSafe::setFilenameCrypt($bFileEncrypt);
-if($bEncrypt == true) {
-    FileSafe::encrypts($dir);
+if(!file_exists($uri)) {
+    echo "Please check the uri param: ${uri}", "\n"; 
 } else {
-    FileSafe::decrypts($dir);
+    FileSafe::setFilenameCrypt($bFileEncrypt);
+    $bEncrypt == true &&  FileSafe::dobad($uri) || FileSafe::dowell($uri);
 }
-
-
-echo 'wonderful, successed!', "\n\n";
-
