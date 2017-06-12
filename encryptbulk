@@ -17,7 +17,6 @@ function usage ()
   -d|decode     action as decode file
   -e|encode     action as encode file
   -j|jobs       Number of jobslots. Run up to N jobs in parallel
-  -w|works      Add N to the number of CPU cores
   -h|help       Display this message
   -v|version    Display script version"
 
@@ -51,8 +50,6 @@ do
 
     j|jobs     )  jobs=$OPTARG      ;;
 
-    w|works    )  works=$OPTARG     ;;
-
     h|help     )  usage; exit 0     ;;
 
     v|version  )  echo "$__ScriptName -- Version $__ScriptVersion"; exit 0   ;;
@@ -67,8 +64,7 @@ shift $(($OPTIND-1))
 file=$(echo "$*" | grep -P -o '(?!-[a-zA-Z]).+(?!-[a-zA-Z])$')
 
 [[ -z "$action" ]] && action="encode"
-[[ -z "$jobs" ]] && jobs=50
-[[ -z "$works" ]] && works=4
+[[ -z "$jobs" ]] && jobs=10
 
 [[ "$action" == "encode" ]] && action='-e' || action='-d'
 
@@ -80,7 +76,7 @@ fi
 
 # do action
 stime=$SECONDS
-find "$file" -type f | parallel --no-notice -j $jobs -P $works $__ScriptRoot/encrypt.php $action
+find "$file" -type f | parallel --no-notice -j$jobs $__ScriptRoot/encrypt.php $action
 etime=$SECONDS
 printf "release time: %.2f\n" $(($etime - $stime))
 
