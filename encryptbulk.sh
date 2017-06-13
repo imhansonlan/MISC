@@ -16,7 +16,7 @@ function usage ()
   Options:
   -d|decode     action as decode file
   -e|encode     action as encode file
-  -j|jobs       Number of jobslots. Run up to N jobs in parallel
+  -j|jobs       Default: 50. Number of jobslots. Run up to N jobs in parallel
   -h|help       Display this message
   -v|version    Display script version"
 
@@ -61,22 +61,22 @@ shift $(($OPTIND-1))
 #-----------------------------------------------------------------------
 #  Main codes
 #-----------------------------------------------------------------------
-file=$(echo "$*" | grep -P -o '(?!-[a-zA-Z]).+(?!-[a-zA-Z])$')
+path=$(echo "$*" | grep -P -o '(?!-[a-zA-Z]).+(?!-[a-zA-Z])$')
 
 [[ -z "$action" ]] && action="encode"
-[[ -z "$jobs" ]] && jobs=10
+[[ -z "$jobs" ]] && jobs=50
 
 [[ "$action" == "encode" ]] && action='-e' || action='-d'
 
-# check file
-if [[ ! -e "$file" ]]; then
-  echo -e "\n\x1b[38;5;1mFile not exist : $file \x1b[0m \n"
+# check path
+if [[ ! -e "$path" ]]; then
+  echo -e "\n\x1b[38;5;1mFile not exist : $path \x1b[0m \n"
   usage; exit 1
 fi
 
 # do action
 stime=$SECONDS
-find "$file" -type f | parallel --no-notice -j$jobs $__ScriptRoot/encrypt.php $action
+find "$path" -type f | parallel --no-notice -j $jobs $__ScriptRoot/encrypt.php -q $action
 etime=$SECONDS
-printf "release time: %.2f\n" $(($etime - $stime))
+printf "release time: %d Seconds\n" $(($etime - $stime))
 
