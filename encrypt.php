@@ -1,6 +1,12 @@
 #!/usr/bin/env php
 <?php
 
+function microtime_float()
+{
+    list($usec, $sec) = explode(" ", microtime());
+    return ((float)$usec + (float)$sec);
+}
+
 //Videos Encrypt Or Decrypt
 class FileSafe
 {
@@ -8,22 +14,26 @@ class FileSafe
     const IKEY = "-x6g6ZWm2G9g_vr0Bo.pOq3kRIxsZ6rm";
     const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_~";
 
-    protected static $arr_ps = [[0,20], [5,30], [20,10]];
-    protected static $b_filename_encrypt = true;
+    public static $arr_ps = [[0,20], [5,30], [20,10]];
+    public static $b_filename_encrypt = true;
+    public static $action = 'encrypt';
 
-    static function dobad($filepath)
-    {
-        if (!file_exists($filepath)) return ;
-        is_dir($filepath)  && self::encrypts($filepath);
-        is_file($filepath) && self::encrypt($filepath);
-        return true;
+    static function f1() {
+        echo "1\n";
     }
 
-    static function dowell($filepath)
+    static function f2() {
+        echo "2\n";
+    }
+
+    static function run($filepath)
     {
         if (!file_exists($filepath)) return ;
-        is_dir($filepath)  && self::decrypts($filepath);
-        is_file($filepath) && self::decrypt($filepath);
+        if (is_dir($filepath)) {
+            self::$action == 'encrypt' ? self::encrypts($filepath) : self::decrypts($filepath);    
+        } else {                       
+            self::$action == 'encrypt' ? self::encrypt($filepath)  : self::decrypt($filepath);    
+        }
         return true;
     }
 
@@ -112,11 +122,15 @@ class FileSafe
         return true;
     }
     
+    static function setAction($action)
+    {
+        self::$action = $action;
+    }
+
     static function setFilenameCrypt($b_filename_encrypt)
     {
         self::$b_filename_encrypt = $b_filename_encrypt;
     }
-    
 
     static function fcharswap($handle, $pos1, $pos2)
     {
@@ -170,7 +184,6 @@ class FileSafe
         $tmp = preg_replace('[\000]', '', $tmp);
         return $tmp;
     }
-
 
     static function StrEncrypt($txt)
     {
@@ -243,6 +256,7 @@ Usage：
         -d decrypt file
         -f wheather encrypt filename, default is true.
         -n dont encrypt filename
+        -q quiet
         -h help
     dir:
         required, where to find files to be handle
@@ -259,19 +273,28 @@ EOF;
 ini_set("memory_limit", "512M");
 set_time_limit(0);
 
+$stime = microtime_float();
+
 $uri = '';
-$bEncrypt = true;
+$action = 'encrypt';
 $bFileEncrypt = true;
 
-if(in_array('-d', $argv)) $bEncrypt = false;
+if(in_array('-d', $argv)) $action = 'decrypt';
 if(in_array('-n', $argv)) $bFileEncrypt = false;
+
+FileSafe::setAction($action);
+FileSafe::setFilenameCrypt($bFileEncrypt);
 
 $uri = getPathFromConsole($argv);
 $uri = rtrim($uri, '/');
 
 if(!file_exists($uri)) {
     echo "Please check the uri param: ${uri}", "\n"; 
-} else {
-    FileSafe::setFilenameCrypt($bFileEncrypt);
-    $bEncrypt == true &&  FileSafe::dobad($uri) || FileSafe::dowell($uri);
+    exit();
 }
+
+FileSafe::run($uri);
+
+$etime = microtime_float();
+!in_array('-q', $argv) && printf("release time is: %.2f\n", $etime - $stime);
+
