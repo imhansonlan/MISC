@@ -254,8 +254,7 @@ Usage：
     option:
         -e encrypt file [default]
         -d decrypt file
-        -f wheather encrypt filename, default is true.
-        -n dont encrypt filename
+        -x dont encrypt filename
         -q quiet
         -h help
     dir:
@@ -280,7 +279,7 @@ $action = 'encrypt';
 $bFileEncrypt = true;
 
 if(in_array('-d', $argv)) $action = 'decrypt';
-if(in_array('-n', $argv)) $bFileEncrypt = false;
+if(in_array('-x', $argv)) $bFileEncrypt = false;
 
 FileSafe::setAction($action);
 FileSafe::setFilenameCrypt($bFileEncrypt);
