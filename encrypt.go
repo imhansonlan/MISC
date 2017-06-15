@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	s "strings"
 	"sync"
 	"syscall"
@@ -26,6 +27,18 @@ const (
 	KEY   string = "!@#$%^&*"
 	CHARS string = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_~"
 )
+
+func GetOptVal(opt string) string {
+	i := ArraySearch(os.Args, opt)
+	if i == -1 || len(os.Args) == i+1 {
+		return ""
+	}
+	val := os.Args[i+1]
+	if val[:1] == "-" && len(val) == 2 {
+		return ""
+	}
+	return val
+}
 
 func ArraySearch(vs []string, t string) int {
 	for i, v := range vs {
@@ -333,6 +346,7 @@ var Usage = func(code int, msg ...string) {
 	fmt.Fprintf(os.Stdin, "Usage: %s [options] file/dir\n\n", filepath.Base(os.Args[0]))
 	fmt.Println(" -e      encrypt file")
 	fmt.Println(" -d      decrypt file")
+	fmt.Println(" -w      worker count, default: 50")
 	fmt.Println(" -x      dont encode filename")
 	fmt.Println(" -h      show command usage")
 	os.Exit(code)
@@ -341,7 +355,7 @@ var Usage = func(code int, msg ...string) {
 func main() {
 	ts := time.Now()
 
-	const MAX int = 50
+	cap := 50
 	path := GetPathFromArgs(os.Args[1:])
 	action := "encrypt"
 	encfilename := true
@@ -362,8 +376,15 @@ func main() {
 		encfilename = false
 	}
 
+	if wc := GetOptVal("-w"); wc != "" {
+		nwc, _ := strconv.Atoi(wc)
+		if nwc > 0 {
+			cap = nwc
+		}
+	}
+
 	filelist := GetFilelist(path)
-	pool := NewPool(MAX, len(filelist))
+	pool := NewPool(cap, len(filelist))
 	for _, v := range filelist {
 		go func(file string) {
 			pool.AddOne()
