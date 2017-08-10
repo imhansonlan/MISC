@@ -28,7 +28,7 @@ $body
 def gen_index(urls, port):
     links = []
     for i, url in enumerate(urls[1:]):
-        link = 'http://localhost:%d/%s' % (port, url)
+        link = '../../%s' % (url, )
         doc_name = url
         links.append('[%s](%s) %s' % (doc_name, link, url))
     links_join = '\n\n' . join(links)
@@ -38,25 +38,31 @@ def gen_index(urls, port):
     with (open(mdfile, 'w')) as f:
         f.write(data)
     cmd = 'cd %s' % os.path.join(DOCSWEB, 'index')
-    cmd = cmd + ' && mkdocs build -t amelia -c -d docs-html'
+    cmd = cmd + ' && mkdocs build -c -d docs-html'
     log.info(cmd)
     os.system(cmd)
-    # remove googleapi, because it let the page be loading so slowly.
-    filename = os.path.join(DOCSWEB, 'index', 'docs-html', 'css', 'bootstrap-custom.min.css')
-    f = open(filename, "r+")
-    data = mmap.mmap(f.fileno(), os.path.getsize(filename))
-    start = 0
-    end = data.find(";") + 1
-    length = end - start
-    size = len(data)
-    newsize = size - length
-    data.move(start, end, size - end)
-    data.flush()
-    data.close()
-    f.truncate(newsize)
+
+    #  # remove googleapi, because it let the page be loading so slowly.
+    #  filename = os.path.join(DOCSWEB, 'index', 'docs-html', 'css', 'bootstrap-custom.min.css')
+    #  f = open(filename, "r+")
+    #  data = mmap.mmap(f.fileno(), os.path.getsize(filename))
+    #  start = 0
+    #  end = data.find(";") + 1
+    #  length = end - start
+    #  size = len(data)
+    #  newsize = size - length
+    #  data.move(start, end, size - end)
+    #  data.flush()
+    #  data.close()
+    #  f.truncate(newsize)
 
 
 def web_startup(port):
+
+    #  kill process first if it has already been statuped
+    cmd = 'psaux local-host-bind | awk "{print $2}" | xargs kill -9'
+    os.system(cmd)
+
     cmd = 'cd %s' % DOCSWEB
     cmd = cmd + ' && python -m SimpleHTTPServer %d' % port
     os.system(cmd)
@@ -65,6 +71,11 @@ def web_startup(port):
 if __name__ == '__main__':
     urls = [
         'index/docs-html',
+        'wiki.swoole.com',
+        'makefile/site',
+        'gobyexample',
+        'golang.org/pkg',
+        'nodejs.org/api',
         'notebook/site',
         'laravel-china.org/docs/5.1',
         'www.golaravel.com/laravel/docs/5.0',
@@ -104,4 +115,4 @@ if __name__ == '__main__':
 
     gen_index(urls, port)
     log.info('http://localhost:%d/index/docs-html/' % port)
-    web_startup(port)
+    #  web_startup(port)
