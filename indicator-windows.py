@@ -20,8 +20,8 @@ from gi.repository import Wnck
 from gi.repository import AppIndicator3 as AppIndicator
 
 
-APPINDICATOR_ID = 'appindicator_windows'
-APPINDICATOR_ICON = 'windows'
+APPINDICATOR_ID = 'windows-indicator'
+APPINDICATOR_ICON = 'windows-indicator'
 APPINDICATOR_RATE = 1
 
 

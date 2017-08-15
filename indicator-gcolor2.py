@@ -11,12 +11,13 @@ from gi.repository import AppIndicator3 as appindicator
 # from gi.repository import Notify as notify
 
 
-APPINDICATOR_ID = 'myappindicator'
+APPINDICATOR_ID = 'gcolor-indicator'
+APPINDICATOR_ICON = 'gcolor-indicator'
 
 
 def main():
     # icon = gtk.IconTheme.get_default().load_icon('gcolor2', 22, 0)
-    indicator = appindicator.Indicator.new(APPINDICATOR_ID, 'gcolor-indicator', appindicator.IndicatorCategory.SYSTEM_SERVICES)
+    indicator = appindicator.Indicator.new(APPINDICATOR_ID, APPINDICATOR_ICON, appindicator.IndicatorCategory.SYSTEM_SERVICES)
     indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
     indicator.set_menu(build_menu())
     # notify.init(APPINDICATOR_ID)
@@ -29,7 +30,7 @@ def build_menu():
     item_show.connect('activate', show)
     menu.append(item_show)
 
-    item_hide = gtk.MenuItem('Hide')
+    item_hide = gtk.MenuItem('Hide Color Picker')
     item_hide.connect('activate', hide)
     menu.append(item_hide)
 
