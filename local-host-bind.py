@@ -71,12 +71,14 @@ def web_startup(port):
 if __name__ == '__main__':
     urls = [
         'index/docs-html',
+        'workerman-manual/chinese/book',
+        'GatewayWorker-Manual/book',
         'wiki.swoole.com',
         'makefile/site',
         'gobyexample',
         'golang.org/pkg',
         'nodejs.org/api',
-        'notebook/site',
+        'notebook',
         'laravel-china.org/docs/5.1',
         'www.golaravel.com/laravel/docs/5.0',
         'lumen.laravel-china.org/docs',
@@ -84,7 +86,7 @@ if __name__ == '__main__':
         'flask-docs-html',
         'explore-flask/docs-html',
         'click-docs-html',
-        'ahkcn.github.io',
+        'introduction-to-tornado',
         'tornado-docs',
         'tornado-docs-html',
         'doc.redisfans.com',
@@ -105,6 +107,7 @@ if __name__ == '__main__':
         'selenium-docs-html',
         'selenium-doc/docs-html',
         'www.php2python.com',
+        'ahkcn.github.io',
         'zsh_html'
     ]
     port = 8888

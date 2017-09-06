@@ -30,7 +30,7 @@ def build_menu():
     item_show.connect('activate', show)
     menu.append(item_show)
 
-    item_hide = gtk.MenuItem('Hide Color Picker')
+    item_hide = gtk.MenuItem('Hide It')
     item_hide.connect('activate', hide)
     menu.append(item_hide)
 
