@@ -2,19 +2,20 @@
 # -*- coding: utf-8 -*-
 # version: release
 from __future__ import division
-import os
-import sys
-import glob
+
 import argparse
-import hashlib
 import base64
-import re
-import random
+import copy
+import dbm
+import glob
+import hashlib
 import math
+import os
+import queue
+import random
+import sys
 import threading
 import time
-import Queue
-import copy
 
 
 def group(lst, n):
@@ -31,9 +32,9 @@ def rand(min, max):
     return random.randint(min, max)
 
 
-def md5(s, raw_output=False):
+def md5(s: str, raw_output=False):
     """Calculates the md5 hash of a given string"""
-    res = hashlib.md5(s)
+    res = hashlib.md5(s.encode())
     if raw_output:
         return res.digest()
     return res.hexdigest()
@@ -48,14 +49,12 @@ def substr_replace(subject, replace, start, length):
         return subject[:start] + replace + subject[start+length:]
 
 
-def base64_decode(data):
-    result = base64.b64decode(data)
-    return result
+def base64_decode(data: str):
+    return base64.b64decode(data.encode()).decode()
 
 
-def base64_encode(data):
-    result = base64.b64encode(data)
-    return result
+def base64_encode(data: str):
+    return base64.b64encode(data.encode()).decode()
 
 
 def strpos(haystack, needle, offset=0):
@@ -84,10 +83,6 @@ class FileSafeException(Exception):
 
 class FileSafe():
     """Encrypt binaryfile class helper"""
-
-    KEY = "!@#$%^&*"
-    IKEY = "-x6g6ZWm2G9g_vr0Bo.pOq3kRIxsZ6rm"
-    CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_~"
 
     arrps = [[0, 20], [5, 30], [20, 10]]
     bFileNameEncode = True
@@ -119,93 +114,16 @@ class FileSafe():
         self.bDebug = debug
 
     @classmethod
-    def strDecrypt(self, txt):
-        key = self.KEY
-        chars = self.CHARS
-        ikey = self.IKEY
-        knum = 0
-        tlen = len(txt)
-
-        for c in key:
-            knum += ord(c)
-
-        ch1 = txt[knum % tlen]
-        nh1 = strpos(chars, ch1)
-        txt = substr_replace(txt, '', knum % tlen, 1)
-        tlen -= 1
-        ch2 = txt[nh1 % tlen]
-        nh2 = strpos(chars, ch2)
-        txt = substr_replace(txt, '', nh1 % tlen, 1)
-        tlen -= 1
-        ch3 = txt[nh2 % tlen]
-        nh3 = strpos(chars, ch3)
-        txt = substr_replace(txt, '', nh2 % tlen, 1)
-        nhnum = nh1 + nh2 + nh3
-        mdKey = md5(md5(md5(key+ch1) + ch2 + ikey) + ch3)[nhnum % 8: nhnum % 8 + knum % 8 + 16]
-        tmp = ''
-        k = 0
-        klen = len(mdKey)
-
-        for char in txt:
-            k = (0 if k == klen else k)
-            j = strpos(chars, char) - nhnum - ord(mdKey[k])
-            k += 1
-            while j < 0:
-                j += 64
-            tmp += chars[j]
-
-        keys = ('-', '_', '.')
-        values = ('+', '/', '=')
-        result = dict(zip(keys, values))
-        for k, v in result.items():
-            tmp = tmp.replace(k, v)
-        tmp = base64_decode(tmp)
-        tmp = re.sub('[\000]', '', tmp)
-        return tmp
+    def strDecrypt(self, key):
+        value = db.get(key).decode()
+        return base64_decode(value)
 
     @classmethod
     def strEncrypt(self, txt):
-        key = self.KEY
-        chars = self.CHARS
-        ikey = self.IKEY
-        nh1 = rand(0, 64)
-        nh2 = rand(0, 64)
-        nh3 = rand(0, 64)
-
-        ch1 = chars[nh1]
-        ch2 = chars[nh2]
-        ch3 = chars[nh3]
-        nhnum = nh1 + nh2 + nh3
-        knum = 0
-        for c in key:
-            knum += ord(c)
-        mdKey = md5(md5(md5(key+ch1) + ch2 + ikey) + ch3)[nhnum % 8: nhnum % 8 + knum % 8 + 16]
-        txt = base64_encode(txt)
-
-        keys = ('+', '/', '=')
-        values = ('-', '_', '.')
-        result = dict(zip(keys, values))
-        for k, v in result.items():
-            txt = txt.replace(k, v)
-
-        tmp = ''
-        k = 0
-        klen = len(mdKey)
-
-        for char in txt:
-            k = (0 if k == klen else k)
-            j = (nhnum + strpos(chars, char) + ord(mdKey[k])) % 64
-            k += 1
-            tmp += chars[j]
-
-        tmplen = len(tmp)
-        tmplen += 1
-        tmp = substr_replace(tmp, ch3, nh2 % tmplen, 0)
-        tmplen += 1
-        tmp = substr_replace(tmp, ch2, nh1 % tmplen, 0)
-        tmplen += 1
-        tmp = substr_replace(tmp, ch1, knum % tmplen, 0)
-        return tmp
+        key = md5(txt);
+        value = base64_encode(txt)
+        db[key] = value
+        return key
 
     @classmethod
     def getFiles(self, sdir):
@@ -216,6 +134,8 @@ class FileSafe():
                     root = root.replace('\\', '/').rstrip('/')
                     sep = '/'
                     for file in files:
+                        if file.endswith('.db'):
+                            continue
                         fileStore.append(root + sep + file)
                     for sdir in dirs:
                         self.subdir.append(root + sep + sdir)
@@ -226,6 +146,8 @@ class FileSafe():
                 self.sdir = sdir
                 # fileStore = [file for file in glob.glob(sdir + os.sep + '*') if os.path.isfile(file)]
                 for file in glob.glob(sdir + os.sep + '*'):
+                    if file.endswith('.db'):
+                        continue
                     if os.path.isfile(file):
                         fileStore.append(file)
                     elif os.path.isdir(file):
@@ -248,7 +170,7 @@ class FileSafe():
         for file in filelist:
             try:
                 self.encrypt(file)
-            except FileSafeException, e:
+            except FileSafeException as e:
                 self.work_queue.put(str(e))
 
     @classmethod
@@ -287,7 +209,7 @@ class FileSafe():
                     f.write(char2)
                     f.seek(pos2)
                     f.write(char1)
-        except Exception, e:
+        except Exception as e:
             msg = "EncryptError: " + str(e)
             raise FileSafeException(msg)
 
@@ -321,7 +243,7 @@ class FileSafe():
             msg = "File '" + oldname + "' has been rename '" + newname + "'."
             if self.bDebug:
                 self.work_queue.put(msg)
-        except Exception, e:
+        except Exception as e:
             msg = "!EncodeError: " + str(e) + \
                 ", Do you action decrypt and filename still be not fileNameEncode ?" + \
                 "\n*You better with option '-x'*"
@@ -346,7 +268,7 @@ class ThreadRunner(threading.Thread):
     def run(self):
         self.callback(*self.parameter)
         if self.showStatus:
-            msg = " *" + self.getName().ljust(9) + " is ending at: " + time.ctime()
+            msg = " *" + self.name.ljust(9) + " is ending at: " + time.ctime()
             self.work_queue.put(msg)
 
 
@@ -369,6 +291,7 @@ class Printer(threading.Thread):
 """ ##################### Main code ################################ """
 """ ################################################################ """
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(description='Encrypt Or Decrypt binaryfile.')
     parser.add_argument('-e', action='store_true', default=True, help='encrypt binaryfile, default: True')
     parser.add_argument('-d', action='store_true', help='decrypt binaryfile')
@@ -391,19 +314,19 @@ if __name__ == "__main__":
         sys.exit()
 
     if os.path.exists(args.dir) is False:
-        print "Please check the sdir, it may be not exists."
+        print("Please check the sdir, it may be not exists.")
         sys.exit()
 
     """ ########### >> init variables ################################### """
-    work_queue = Queue.Queue()
+    work_queue = queue.Queue()
     tcount = args.n     # Max Thread Count
     sucessed = '''
      _____________
      < well done >
      -------------
-        \   ^__^
-         \  (oo)\_______
-            (__)\       )\/\
+        \\   ^__^
+         \\  (oo)\\_______
+            (__)\\       )\\/\\
 
                 ||----w |
                 ||     ||
@@ -431,8 +354,8 @@ if __name__ == "__main__":
             FileSafe.subDirNameEncode()
 
         end = time.time()
-        print sucessed
-        print "**Take times: ", 'seconds: %.3f' % (end - start)
+        print(sucessed)
+        print("**Take times: ", 'seconds: %.3f' % (end - start))
         sys.exit()
 
     """ ################################################################ """
@@ -445,13 +368,14 @@ if __name__ == "__main__":
 
     files = FileSafe.getFiles(args.dir)
     if len(files) == 0:
-        print 'No files to be handle...'
+        print('No files to be handle...')
         sys.exit()
     fpartition = partition(files, tcount)
 
-    # print files
-    # sys.exit()
-
+    # open db
+    dbfile = os.path.join(args.dir, 'data')
+    db = dbm.open(dbfile,'c')
+    
     work_queue.put("**Threading Starting ... %s ... " % time.ctime())
     start = time.time()
 
@@ -474,7 +398,7 @@ if __name__ == "__main__":
 
     work_queue.put(sucessed)
     end = time.time()
-    msg = "**Threading(%d) all ending at:%s, Take times:%.3f seconds" % (len(fpartition), time.ctime(), (end - start))
+    msg = "**Threading(%d) all ending at:%s, Take times:%.3f seconds" % (len(threads), time.ctime(), (end - start))
     work_queue.put(msg)
 
     # All to be end.
@@ -484,5 +408,12 @@ if __name__ == "__main__":
     # finally subdir name handle
     if args.a:
             FileSafe.subDirNameEncode()
+    
+    # close db
+    db.close()
+
+    # remove db file after decrypt 
+    if args.d:
+        os.remove(dbfile + '.db')
 
     # work_queue.join()

@@ -75,7 +75,7 @@ func GetStatTimes(name string) (atime, mtime time.Time, err error) {
 	}
 	mtime = fi.ModTime()
 	stat := fi.Sys().(*syscall.Stat_t)
-	atime = time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
+	atime = time.Unix(int64(stat.Atimespec.Sec), int64(stat.Atimespec.Nsec))
 	return
 }
 
